@@ -12,6 +12,15 @@
 .github-emoji:hover{
     animation: emoji-face 5s infinite ease-in-out;
 }
+@font-face{
+    font-family: 'myFont';
+    src: url('../font/Monaco.ttf');
+}
+
+body{
+    font-family: 'myFont';
+}
+
 @keyframes emoji-face {
     2% {
         transform: translate(0, 1.5px) rotate(1.5deg);
