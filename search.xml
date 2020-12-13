@@ -4,13 +4,25 @@
   
     
     <entry>
-      <title>Hello World</title>
-      <link href="posts/3eeb.html"/>
-      <url>posts/3eeb.html</url>
+      <title>Centos7安装ElasticSearch7.9.3</title>
+      <link href="posts/600f.html"/>
+      <url>posts/600f.html</url>
       
-        <content type="html"><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p><h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></tbody></table></figure><p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p><h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></tbody></table></figure><p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p><h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></tbody></table></figure><p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p><h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></tbody></table></figure><p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>]]></content>
+        <content type="html"><![CDATA[<h3 id="一、单节点-192-168-10-10-安装"><a href="#一、单节点-192-168-10-10-安装" class="headerlink" title="一、单节点(192.168.10.10)安装"></a>一、单节点(192.168.10.10)安装</h3><p>在<a href="https://www.elastic.co/cn/downloads/elasticsearch">官网</a>下载安装包elasticsearch-7.9.3-linux-x86_64.tar.gz，上传至 <code>/usr/local</code>目录下</p><pre class=" language-shell"><code class="language-shell">tar -zxvf elasticsearch-7.9.3-linux-x86_64.tar.gzcd /usr/local/elasticsearch-7.9.3/bin#执行启动命令./elasticsearch</code></pre><p>启动直接报错，如下图所示：</p><p><img src="https://gitee.com/evan0213/pic-bed/raw/master/20201203225539.png"></p><p>可以看出2点：</p><ol><li>未来ElasticSearch将要求java11，不再支持jdk1.8</li><li>ElasticSearch不能使用root用户启动</li></ol><pre class=" language-shell"><code class="language-shell">#创建es用户组groupadd es#创建es用户并设置密码useradd es -g es -p 123456#将elasticsearch文件夹及内部文件划入刚创建的用户和组es:eschown -R es:es /usr/local/elasticsearch-7.9.3su - es#用es用户再次执行启动命令./elasticsearch</code></pre><p><img src="https://gitee.com/evan0213/pic-bed/raw/master/20201203225734.png"></p><p>成功启动，使用curl命令测试:<code>curl http://127.0.0.1:9200</code></p><p><img src="https://gitee.com/evan0213/pic-bed/raw/master/20201203225929.png"></p><h3 id="二、自定义配置"><a href="#二、自定义配置" class="headerlink" title="二、自定义配置"></a>二、自定义配置</h3><pre class=" language-shell"><code class="language-shell">#进入配置文件目录cd /usr/local/elasticsearch-7.9.3/config#编辑文件vi elasticsearch.yml</code></pre><p>添加如下内容</p><pre class=" language-shell"><code class="language-shell">cluster.name: evan-esnode.name: master</code></pre><p><img src="https://gitee.com/evan0213/pic-bed/raw/master/20201203230333.png"></p><p>可以看出，配置的集群名和节点名生效了。</p><p>配置通过外部浏览器访问</p><pre class=" language-shell"><code class="language-shell">network.host: 192.168.10.10</code></pre><p>再次启动出现如下3个报错：</p><p><img src="https://gitee.com/evan0213/pic-bed/raw/master/20201203230534.png"></p><p>错误1：</p><pre class=" language-shell"><code class="language-shell">#每个进程最大同时打开文件数太小，可通过下面2个命令查看当前数量ulimit -Hnulimit -Sn#修改/etc/security/limits.conf文件，增加配置，用户退出后重新登录生效*               soft    nofile          65536*               hard    nofile          65536</code></pre><p>错误2：</p><pre class=" language-shell"><code class="language-shell">#修改/etc/sysctl.conf文件vi /etc/sysctl.conf#增加配置vm.max_map_count=262144#执行命令sysctl -p生效sysctl -p</code></pre><p>错误3：</p><pre class=" language-shell"><code class="language-shell">#修改elasticsearch.yml配置文件cluster.initial_master_nodes: ["192.168.10.10"] </code></pre><p>最后执行 <code>./elasticsearch</code>启动，外部浏览器访问：<a href="http://192.168.10.10:9200/">http://192.168.10.10:9200/</a></p><p><img src="https://gitee.com/evan0213/pic-bed/raw/master/20201203230615.png"></p><h3 id="三、参考文档"><a href="#三、参考文档" class="headerlink" title="三、参考文档"></a>三、参考文档</h3><ol><li><a href="https://www.cnblogs.com/zhi-leaf/p/8484337.html">elasticsearch启动常见错误</a></li></ol>]]></content>
       
       
+      <categories>
+          
+          <category> ElasticSearch </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> ElasticSearch </tag>
+            
+        </tags>
       
     </entry>
     
